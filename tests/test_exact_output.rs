@@ -5,7 +5,7 @@ use std::sync::Once;
 
 static INIT: Once = Once::new();
 
-mod tests_symlinks;
+mod tests;
 
 /**
  * This file contains tests that verify the exact output of the command.
@@ -55,6 +55,8 @@ fn exact_output_test<T: AsRef<OsStr>>(valid_outputs: Vec<String>, command_args: 
     }
     let output: String = str::from_utf8(&a.unwrap().stdout).unwrap().into();
 
+    println!("I got this as output:");
+    println!("{:?}", output);
     assert!(valid_outputs
         .iter()
         .fold(false, |sum, i| sum || output.contains(i)));
@@ -104,110 +106,110 @@ fn main_output() -> Vec<String> {
     vec![mac_and_some_linux, ubuntu]
 }
 
-#[cfg_attr(target_os = "windows", ignore)]
-#[test]
-pub fn test_main_long_paths() {
-    let command_args = vec!["-c", "-p", "/tmp/test_dir/"];
-    exact_output_test(main_output_long_paths(), command_args);
-}
+// #[cfg_attr(target_os = "windows", ignore)]
+// #[test]
+// pub fn test_main_long_paths() {
+//     let command_args = vec!["-c", "-p", "/tmp/test_dir/"];
+//     exact_output_test(main_output_long_paths(), command_args);
+// }
 
-fn main_output_long_paths() -> Vec<String> {
-    let mac_and_some_linux = r#"
-   0B     ┌── /tmp/test_dir/many/a_file    │░░░░░░░░░░░░░░░░░░░░░░░░░░░░█ │   0%
- 4.0K     ├── /tmp/test_dir/many/hello_file│█████████████████████████████ │ 100%
- 4.0K   ┌─┴ /tmp/test_dir/many             │█████████████████████████████ │ 100%
- 4.0K ┌─┴ /tmp/test_dir                    │█████████████████████████████ │ 100%
-"#
-    .trim()
-    .to_string();
-    let ubuntu = r#"
-   0B     ┌── /tmp/test_dir/many/a_file    │         ░░░░░░░░░░░░░░░░░░░█ │   0%
- 4.0K     ├── /tmp/test_dir/many/hello_file│         ░░░░░░░░░░██████████ │  33%
- 8.0K   ┌─┴ /tmp/test_dir/many             │         ████████████████████ │  67%
-  12K ┌─┴ /tmp/test_dir                    │█████████████████████████████ │ 100%
-"#
-    .trim()
-    .to_string();
-    vec![mac_and_some_linux, ubuntu]
-}
+// fn main_output_long_paths() -> Vec<String> {
+//     let mac_and_some_linux = r#"
+//    0B     ┌── /tmp/test_dir/many/a_file    │░░░░░░░░░░░░░░░░░░░░░░░░░░░░█ │   0%
+//  4.0K     ├── /tmp/test_dir/many/hello_file│█████████████████████████████ │ 100%
+//  4.0K   ┌─┴ /tmp/test_dir/many             │█████████████████████████████ │ 100%
+//  4.0K ┌─┴ /tmp/test_dir                    │█████████████████████████████ │ 100%
+// "#
+//     .trim()
+//     .to_string();
+//     let ubuntu = r#"
+//    0B     ┌── /tmp/test_dir/many/a_file    │         ░░░░░░░░░░░░░░░░░░░█ │   0%
+//  4.0K     ├── /tmp/test_dir/many/hello_file│         ░░░░░░░░░░██████████ │  33%
+//  8.0K   ┌─┴ /tmp/test_dir/many             │         ████████████████████ │  67%
+//   12K ┌─┴ /tmp/test_dir                    │█████████████████████████████ │ 100%
+// "#
+//     .trim()
+//     .to_string();
+//     vec![mac_and_some_linux, ubuntu]
+// }
 
-// Check against directories and files whos names are substrings of each other
-#[cfg_attr(target_os = "windows", ignore)]
-#[test]
-pub fn test_substring_of_names_and_long_names() {
-    let command_args = vec!["-c", "/tmp/test_dir2"];
-    exact_output_test(no_substring_of_names_output(), command_args);
-}
+// // Check against directories and files whos names are substrings of each other
+// #[cfg_attr(target_os = "windows", ignore)]
+// #[test]
+// pub fn test_substring_of_names_and_long_names() {
+//     let command_args = vec!["-c", "/tmp/test_dir2"];
+//     exact_output_test(no_substring_of_names_output(), command_args);
+// }
 
-fn no_substring_of_names_output() -> Vec<String> {
-    let ubuntu = "
-   0B   ┌── long_dir_name_what_a_very_long_dir_name_what_happens_when_this_goe..
- 4.0K   ├── dir_name_clash
- 4.0K   │ ┌── hello
- 8.0K   ├─┴ dir
- 4.0K   │ ┌── hello
- 8.0K   ├─┴ dir_substring
-  24K ┌─┴ test_dir2
-    "
-    .trim()
-    .into();
+// fn no_substring_of_names_output() -> Vec<String> {
+//     let ubuntu = "
+//    0B   ┌── long_dir_name_what_a_very_long_dir_name_what_happens_when_this_goe..
+//  4.0K   ├── dir_name_clash
+//  4.0K   │ ┌── hello
+//  8.0K   ├─┴ dir
+//  4.0K   │ ┌── hello
+//  8.0K   ├─┴ dir_substring
+//   24K ┌─┴ test_dir2
+//     "
+//     .trim()
+//     .into();
 
-    let mac_and_some_linux = "
-   0B   ┌── long_dir_name_what_a_very_long_dir_name_what_happens_when_this_goe..
- 4.0K   │ ┌── hello
- 4.0K   ├─┴ dir
- 4.0K   ├── dir_name_clash
- 4.0K   │ ┌── hello
- 4.0K   ├─┴ dir_substring
-  12K ┌─┴ test_dir2
-  "
-    .trim()
-    .into();
-    vec![mac_and_some_linux, ubuntu]
-}
+//     let mac_and_some_linux = "
+//    0B   ┌── long_dir_name_what_a_very_long_dir_name_what_happens_when_this_goe..
+//  4.0K   │ ┌── hello
+//  4.0K   ├─┴ dir
+//  4.0K   ├── dir_name_clash
+//  4.0K   │ ┌── hello
+//  4.0K   ├─┴ dir_substring
+//   12K ┌─┴ test_dir2
+//   "
+//     .trim()
+//     .into();
+//     vec![mac_and_some_linux, ubuntu]
+// }
 
-#[cfg_attr(target_os = "windows", ignore)]
-#[test]
-pub fn test_unicode_directories() {
-    let command_args = vec!["-c", "/tmp/test_dir_unicode"];
-    exact_output_test(unicode_dir(), command_args);
-}
+// #[cfg_attr(target_os = "windows", ignore)]
+// #[test]
+// pub fn test_unicode_directories() {
+//     let command_args = vec!["-c", "/tmp/test_dir_unicode"];
+//     exact_output_test(unicode_dir(), command_args);
+// }
 
-fn unicode_dir() -> Vec<String> {
-    // The way unicode & asian characters are rendered on the terminal should make this line up
-    let ubuntu = "
-   0B   ┌── ラウトは難しいです！.japan│                                 █ │   0%
-   0B   ├── 👩.unicode                │                                 █ │   0%
- 4.0K ┌─┴ test_dir_unicode            │██████████████████████████████████ │ 100%
-    "
-    .trim()
-    .into();
+// fn unicode_dir() -> Vec<String> {
+//     // The way unicode & asian characters are rendered on the terminal should make this line up
+//     let ubuntu = "
+//    0B   ┌── ラウトは難しいです！.japan│                                 █ │   0%
+//    0B   ├── 👩.unicode                │                                 █ │   0%
+//  4.0K ┌─┴ test_dir_unicode            │██████████████████████████████████ │ 100%
+//     "
+//     .trim()
+//     .into();
 
-    let mac_and_some_linux = "
-   0B   ┌── ラウトは難しいです！.japan│                                 █ │   0%
-   0B   ├── 👩.unicode                │                                 █ │   0%
-   0B ┌─┴ test_dir_unicode            │                                 █ │   0%
-    "
-    .trim()
-    .into();
-    vec![mac_and_some_linux, ubuntu]
-}
+//     let mac_and_some_linux = "
+//    0B   ┌── ラウトは難しいです！.japan│                                 █ │   0%
+//    0B   ├── 👩.unicode                │                                 █ │   0%
+//    0B ┌─┴ test_dir_unicode            │                                 █ │   0%
+//     "
+//     .trim()
+//     .into();
+//     vec![mac_and_some_linux, ubuntu]
+// }
 
-#[cfg_attr(target_os = "windows", ignore)]
-#[test]
-pub fn test_apparent_size() {
-    let command_args = vec!["-c", "-s", "-b", "/tmp/test_dir"];
-    exact_output_test(apparent_size_output(), command_args);
-}
+// #[cfg_attr(target_os = "windows", ignore)]
+// #[test]
+// pub fn test_apparent_size() {
+//     let command_args = vec!["-c", "-s", "-b", "/tmp/test_dir"];
+//     exact_output_test(apparent_size_output(), command_args);
+// }
 
-fn apparent_size_output() -> Vec<String> {
-    // The apparent directory sizes are too unpredictable and system dependant to try and match
-    let files = r#"
-   0B     ┌── a_file
-   6B     ├── hello_file
- "#
-    .trim()
-    .to_string();
+// fn apparent_size_output() -> Vec<String> {
+//     // The apparent directory sizes are too unpredictable and system dependant to try and match
+//     let files = r#"
+//    0B     ┌── a_file
+//    6B     ├── hello_file
+//  "#
+//     .trim()
+//     .to_string();
 
-    vec![files]
-}
+//     vec![files]
+// }
